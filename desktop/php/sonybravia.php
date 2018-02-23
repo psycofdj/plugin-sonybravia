@@ -1,6 +1,6 @@
 <?php
 if (!isConnect('admin')) {
-    	throw new Exception('{{401 - Accès non autorisé}}');
+        throw new Exception('{{401 - Accès non autorisé}}');
 }
 $plugin = plugin::byId('sonybravia');
 sendVarToJS('eqType', $plugin->getId());
@@ -15,8 +15,8 @@ $eqLogics = eqLogic::byType($plugin->getId());
                 <li class="filter" style="margin-bottom: 5px;"><input class="filter form-control input-sm" placeholder="{{Rechercher}}" style="width: 100%"/></li>
                 <?php
 foreach ($eqLogics as $eqLogic) {
-	$opacity = ($eqLogic->getIsEnable()) ? '' : jeedom::getConfiguration('eqLogic:style:noactive');
-	echo '<li class="cursor li_eqLogic" data-eqLogic_id="' . $eqLogic->getId() . '" style="' . $opacity . '"><a>' . $eqLogic->getHumanName(true) . '</a></li>';
+    $opacity = ($eqLogic->getIsEnable()) ? '' : jeedom::getConfiguration('eqLogic:style:noactive');
+    echo '<li class="cursor li_eqLogic" data-eqLogic_id="' . $eqLogic->getId() . '" style="' . $opacity . '"><a>' . $eqLogic->getHumanName(true) . '</a></li>';
 }
 ?>
            </ul>
@@ -34,12 +34,12 @@ foreach ($eqLogics as $eqLogic) {
     </div>
     <?php
 foreach ($eqLogics as $eqLogic) {
-	$opacity = ($eqLogic->getIsEnable()) ? '' : jeedom::getConfiguration('eqLogic:style:noactive');
-	echo '<div class="eqLogicDisplayCard cursor" data-eqLogic_id="' . $eqLogic->getId() . '" style="text-align: center; background-color : #ffffff; height : 200px;margin-bottom : 10px;padding : 5px;border-radius: 2px;width : 160px;margin-left : 10px;' . $opacity . '" >';
-	echo '<img src="' . $plugin->getPathImgIcon() . '" height="105" width="95" />';
-	echo "<br>";
-	echo '<span style="font-size : 1.1em;position:relative; top : 15px;word-break: break-all;white-space: pre-wrap;word-wrap: break-word;">' . $eqLogic->getHumanName(true, true) . '</span>';
-	echo '</div>';
+    $opacity = ($eqLogic->getIsEnable()) ? '' : jeedom::getConfiguration('eqLogic:style:noactive');
+    echo '<div class="eqLogicDisplayCard cursor" data-eqLogic_id="' . $eqLogic->getId() . '" style="text-align: center; background-color : #ffffff; height : 200px;margin-bottom : 10px;padding : 5px;border-radius: 2px;width : 160px;margin-left : 10px;' . $opacity . '" >';
+    echo '<img src="' . $plugin->getPathImgIcon() . '" height="105" width="95" />';
+    echo "<br>";
+    echo '<span style="font-size : 1.1em;position:relative; top : 15px;word-break: break-all;white-space: pre-wrap;word-wrap: break-word;">' . $eqLogic->getHumanName(true, true) . '</span>';
+    echo '</div>';
 }
 ?>
 </div>
@@ -75,7 +75,7 @@ foreach ($eqLogics as $eqLogic) {
                             <option value="">{{Aucun}}</option>
                             <?php
 foreach (object::all() as $object) {
-	echo '<option value="' . $object->getId() . '">' . $object->getName() . '</option>';
+    echo '<option value="' . $object->getId() . '">' . $object->getName() . '</option>';
 }
 ?>
                        </select>
@@ -86,52 +86,52 @@ foreach (object::all() as $object) {
                 <div class="col-sm-8">
                     <?php
 foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
-	echo '<label class="checkbox-inline">';
-	echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" />' . $value['name'];
-	echo '</label>';
+    echo '<label class="checkbox-inline">';
+    echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" />' . $value['name'];
+    echo '</label>';
 }
 ?>
                </div>
-			</div>
-			<div class="form-group">
-				<label class="col-sm-2 control-label"></label>
-				<div class="col-sm-9">
-					<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
-					<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
-				</div>
-			</div>
-			<div class="form-group">
-				<label class="col-sm-2 control-label">{{Adresse IP}}</label>
-				<div class="col-sm-2">
-					<input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="ipadress" placeholder="{{192.168.1.1}}"/>
-				</div>
-			</div>
-			<div class="form-group">
-				<label class="col-sm-2 control-label">{{Adresse MAC}}</label>
-				<div class="col-sm-2">
-					<input type="text" class="eqLogicAttr form-control" data-l1key="logicalId" placeholder="{{00:00:00:00:00:00}}"/>
-				</div>
-			</div>
-			<div class="form-group">
-				<label class="col-sm-2 control-label">{{Clé TV}}</label>
-				<div class="col-sm-2">
-					<input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="psk"/>
-				</div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label"></label>
+                <div class="col-sm-9">
+                    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
+                    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{{Adresse IP}}</label>
+                <div class="col-sm-2">
+                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="ipadress" placeholder="{{192.168.1.1}}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{{Adresse MAC}}</label>
+                <div class="col-sm-2">
+                    <input type="text" class="eqLogicAttr form-control" data-l1key="logicalId" placeholder="{{00:00:00:00:00:00}}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{{Clé TV}}</label>
+                <div class="col-sm-2">
+                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="psk"/>
+                </div>
 
-			</div>
+            </div>
 
-			<div class="form-group">
-				<label class="col-sm-2 control-label">{{Configuration}}</label>
-				<div class="col-sm-8"><br/>
-				1 - Activer l'accès distant sur votre TV : [Paramètres] => [Réseaux] => [Configuration Réseau domestique] => [Contrôle IP] => [On]<br/>
-				2 - Activer l'accès par clé partagée : [Paramètres] => [Réseaux] => [Configuration Réseau domestique] => [Contrôle IP] => [Authentification] => [Normal et clé pré-partagée]<br/>
-				3 - Choisir la clé et la renseigner ci-dessus : [Paramètres] => [Réseaux] => [Configuration Réseau domestique] => [Contrôle IP] => [Clé pré-partagée] => sony<br/>
-				<br/>
-				Renseigner les informations sur l'équipement puis sauvegarder.<br/>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{{Configuration}}</label>
+                <div class="col-sm-8"><br/>
+                1 - Activer l'accès distant sur votre TV : [Paramètres] => [Réseaux] => [Configuration Réseau domestique] => [Contrôle IP] => [On]<br/>
+                2 - Activer l'accès par clé partagée : [Paramètres] => [Réseaux] => [Configuration Réseau domestique] => [Contrôle IP] => [Authentification] => [Normal et clé pré-partagée]<br/>
+                3 - Choisir la clé et la renseigner ci-dessus : [Paramètres] => [Réseaux] => [Configuration Réseau domestique] => [Contrôle IP] => [Clé pré-partagée] => sony<br/>
+                <br/>
+                Renseigner les informations sur l'équipement puis sauvegarder.<br/>
 
                                 <a class="btn btn-default eqLogicAction" onclick="window.open('plugins/sonybravia/doc/images/config.png')"><i class="fa fa-question-circle"></i>{{ Plus d'infos}}</a>
-				</div>
-			</div>
+                </div>
+            </div>
 
                         <div class="form-group">
                             <label class="col-sm-2 control-label"></label>
@@ -144,91 +144,80 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
                             </div>
                         </div>
 
-			<div class="form-group">
-				<label class="col-sm-2 control-label"></label>
-				<!--<div class="col-sm-1">
-					<span class="label deamoninfo" title="Cliquer pour mettre à jour" style="font-size:1em;position:relative;top:7px;"><i class="fa fa-refresh"></i> Etat</span>
-				</div>-->
-				<div class="col-sm-1">
-					<a class="btn btn-success gettvpin"><i class="fa fa-cogs"></i> 1. {{Récupérer le PIN}}</a>
-					<script>
-					$('.gettvpin').on('click', function () {
-						$.ajax({// fonction permettant de faire de l'ajax
-							type: "POST", // methode de transmission des données au fichier php
-							url: "plugins/sonybravia/core/ajax/sonybravia.ajax.php", // url du fichier php
-							data: {
-								action: "startdeamon_recuppin",
-								ip : $( "input[data-l2key='ipadress']" ).value(),
-								mac : $( "input[data-l1key='logicalId']" ).value(),
-								psk : $( "input[data-l2key='psk']" ).value(),
+            <div class="form-group">
+                <label class="col-sm-2 control-label"></label>
+                <!--<div class="col-sm-1">
+                    <span class="label deamoninfo" title="Cliquer pour mettre à jour" style="font-size:1em;position:relative;top:7px;"><i class="fa fa-refresh"></i> Etat</span>
+                </div>-->
+                <div class="col-sm-1">
+                    <a class="btn btn-success gettvpin"><i class="fa fa-cogs"></i> 1. {{Récupérer le PIN}}</a>
+                    <script>
+                    $('.gettvpin').on('click', function () {
+                        $.ajax({// fonction permettant de faire de l'ajax
+                            type: "POST", // methode de transmission des données au fichier php
+                            url: "plugins/sonybravia/core/ajax/sonybravia.ajax.php", // url du fichier php
+                            data: {
+                                action: "startdeamon_recuppin",
+                                ip : $( "input[data-l2key='ipadress']" ).value(),
+                                mac : $( "input[data-l1key='logicalId']" ).value(),
+                                psk : $( "input[data-l2key='psk']" ).value(),
                                                                 cookie : 'true'
-							},
-							dataType: 'json',
-							error: function (request, status, error) {
-								handleAjaxError(request, status, error);
-							},
-							success: function (data) { // si l'appel a bien fonctionné
-								if (data.state != 'ok') {
-									$('#div_alert').showAlert({message: data.result, level: 'danger'});
-									return;
-								}
-								$('#div_alert').showAlert({message: '{{Réussie}}', level: 'success'});
-							}
-						});
+                            },
+                            dataType: 'json',
+                            error: function (request, status, error) {
+                                handleAjaxError(request, status, error);
+                            },
+                            success: function (data) { // si l'appel a bien fonctionné
+                                if (data.state != 'ok') {
+                                    $('#div_alert').showAlert({message: data.result, level: 'danger'});
+                                    return;
+                                }
+                                $('#div_alert').showAlert({message: '{{Réussie}}', level: 'success'});
+                            }
+                        });
                                             bootbox.alert("Veuillez passer à l\'étape 2");
-					});
-					</script>
-				</div>
-                                <!--<div class="col-sm-1">
-                                <a class="btn btn-success eqLogicAction pull-right" data-action="save"><i class="fa fa-check-circle"></i>{{Etape 3}}</a>
-                                </div>-->
-			</div>
-			<div class="form-group">
-				<label class="col-sm-2 control-label"></label>
+                    });
+                    </script>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label"></label>
                                  <div class="col-sm-1">
-					<a class="btn btn-success startdeamontv"><i class="fa fa-cogs"></i>{{ 2. Confirmer le PIN}}</a>
-					<script>
-                                        $('.startdeamontv').on('click', function () {
-                                            bootbox.prompt("{{Veuillez indiquer le code affiché sur la TV}}", function (result) {
-                                                if(result != null){
-                                                    $.ajax({// fonction permettant de faire de l'ajax
-							type: "POST", // methode de transmission des données au fichier php
-							url: "plugins/sonybravia/core/ajax/sonybravia.ajax.php", // url du fichier php
-							data: {
-								action: "startdeamon",
-								ip : $( "input[data-l2key='ipadress']" ).value(),
-								mac : $( "input[data-l1key='logicalId']" ).value(),
-								psk : result,
-                                                                cookie : 'true'
-							},
-							dataType: 'json',
-							error: function (request, status, error) {
-								handleAjaxError(request, status, error);
-							},
-							success: function (data) { // si l'appel a bien fonctionné
-								if (data.state != 'ok') {
-									$('#div_alert').showAlert({message: data.result, level: 'danger'});
-									return;
-								}
-                                                                $('input[data-l2key="psk"]').value(result);
-								$('#div_alert').showAlert({message: "{{Réussie, n'oubliez pas de sauvegarder}}", level: "success"});
-                                                                //bootbox.alert("Succès, veuillez renseigner le code dans la zone Clé TV / Code PIN puis passer à l\'étape 3.");
-							}
-                                                    });
-                                                }
-                                            });
-                                        });
-
-
-
-
-					</script>
-				</div>
-                                <div class="col-sm-1">
-
-                                </div>
-			</div>
-
+                    <a class="btn btn-success startdeamontv"><i class="fa fa-cogs"></i>{{ 2. Confirmer le PIN}}</a>
+                    <script>
+                    $('.startdeamontv').on('click', function () {
+                        bootbox.prompt("{{Veuillez indiquer le code affiché sur la TV}}", function (result) {
+                            if(result != null){
+                                $.ajax({// fonction permettant de faire de l'ajax
+                                    type: "POST", // methode de transmission des données au fichier php
+                                    url: "plugins/sonybravia/core/ajax/sonybravia.ajax.php", // url du fichier php
+                                    data: {
+                                        action: "startdeamon",
+                                        ip : $( "input[data-l2key='ipadress']" ).value(),
+                                        mac : $( "input[data-l1key='logicalId']" ).value(),
+                                        psk : result,
+                                        cookie : 'true'
+                                    },
+                                    dataType: 'json',
+                                    error: function (request, status, error) {
+                                        handleAjaxError(request, status, error);
+                                    },
+                                    success: function (data) { // si l'appel a bien fonctionné
+                                        if (data.state != 'ok') {
+                                            $('#div_alert').showAlert({message: data.result, level: 'danger'});
+                                            return;
+                                        }
+                                        $('input[data-l2key="psk"]').value(result);
+                                        $('#div_alert').showAlert({message: "{{Réussie, n'oubliez pas de sauvegarder}}", level: "success"});
+                                    }
+                                });
+                            }
+                        });
+                    });
+                    </script>
+                </div>
+                <div class="col-sm-1"></div>
+            </div>
     </fieldset>
 </form>
 
@@ -250,13 +239,10 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
             </tr>
         </thead>
         <tbody>
-
         </tbody>
     </table>
-
 </div>
 </div>
-
 </div>
 </div>
 <?php include_file('desktop', 'sonybravia', 'css', 'sonybravia');?>

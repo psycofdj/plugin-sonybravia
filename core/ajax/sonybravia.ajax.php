@@ -15,37 +15,37 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 try {
-	require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
-	include_file('core', 'authentification', 'php');
-	if (!isConnect('admin')) {
-		throw new Exception('401 Unauthorized');
-	}
-	ajax::init();
+    require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
+    include_file('core', 'authentification', 'php');
+    if (!isConnect('admin')) {
+        throw new \Exception('401 Unauthorized');
+    }
+    ajax::init();
 
-	if (init('action') == 'startdeamon') {
-		sonybravia::tv_deamon_start(init('ip'), init('mac'), init('psk'), init('cookie'));
-		ajax::success();
-	}
-        
-        if (init('action') == 'startdeamon_recuppin') {
-		sonybravia::tv_deamon_pin(init('ip'), init('mac'), init('psk'), init('cookie'));
-		ajax::success();
-	}
-	
-	if (init('action') == 'stopdeamon') {
-		sonybravia::tv_deamon_stop(init('mac'));
-		ajax::success();
-	}
-	
-	if (init('action') == 'deamon_info') {
-		$return = array();
-		$resultat = sonybravia::tv_deamon_info(init('mac'));
-		ajax::success($return['result'] = $resultat);
-	}
-	
-	throw new Exception('Aucune methode correspondante');
-	/*     * *********Catch exeption*************** */
-} catch (Exception $e) {
-	ajax::error(displayExeption($e), $e->getCode());
+    if (init('action') == 'startdeamon') {
+        sonybravia::tvDeamonStart(init('ip'), init('mac'), init('psk'), init('cookie'));
+        ajax::success();
+    }
+
+    if (init('action') == 'startdeamon_recuppin') {
+        sonybravia::tvDeamonPin(init('ip'), init('mac'), init('psk'), init('cookie'));
+        ajax::success();
+    }
+
+    if (init('action') == 'stopdeamon') {
+        sonybravia::tvDeamonStop(init('mac'));
+        ajax::success();
+    }
+
+    if (init('action') == 'deamon_info') {
+        $return = array();
+        $resultat = sonybravia::tvDeamonInfo(init('mac'));
+        ajax::success($return['result'] = $resultat);
+    }
+
+    throw new \Exception('Aucune methode correspondante');
+    /*     * *********Catch exeption*************** */
+} catch (\Exception $e) {
+    ajax::error(displayExeption($e), $e->getCode());
 }
 ?>

@@ -38,35 +38,35 @@
     });
 });
 
-function maj_etat(){
-	$.ajax({// fonction permettant de faire de l'ajax
-		type: "POST", // methode de transmission des données au fichier php
-		url: "plugins/sonybravia/core/ajax/sonybravia.ajax.php", // url du fichier php
-		data: {
-			action: "deamon_info",
-			mac : $( "input[data-l1key='logicalId']" ).value()
-		},
-		dataType: 'json',
-		error: function (request, status, error) {
-			handleAjaxError(request, status, error);
-		},
-		success: function (data) { // si l'appel a bien fonctionné
-			if (data.result == true) {
-				$(".deamoninfo").removeClass('label-danger').addClass( 'label-success' );
-			}
-			else{
-				$(".deamoninfo").removeClass('label-success').addClass( 'label-danger' );
-			}
-		}
-	});
+function majEtat(){
+    $.ajax({// fonction permettant de faire de l'ajax
+        type: "POST", // methode de transmission des données au fichier php
+        url: "plugins/sonybravia/core/ajax/sonybravia.ajax.php", // url du fichier php
+        data: {
+            action: "deamon_info",
+            mac : $( "input[data-l1key='logicalId']" ).value()
+        },
+        dataType: 'json',
+        error: function (request, status, error) {
+            handleAjaxError(request, status, error);
+        },
+        success: function (data) { // si l'appel a bien fonctionné
+            if (data.result == true) {
+                $(".deamoninfo").removeClass('label-danger').addClass( 'label-success' );
+            }
+            else{
+                $(".deamoninfo").removeClass('label-success').addClass( 'label-danger' );
+            }
+        }
+    });
 }
 
 $('.deamoninfo').on('click', function () {
-	maj_etat();
+    majEtat();
 });
 
 $( ".deamoninfo" ).on('mouseenter', function() {
-    maj_etat();
+    majEtat();
 });
 
  $('#bt_cronGenerator').on('click',function(){
@@ -207,15 +207,15 @@ if (init(_cmd.type) == 'action') {
     tr += '<option value="mute_volume">Mute</option>';
     tr += '<option value="select_source">Changer Source</option>';
     tr += '<option value="start_app">Démarrer une application</option>';
-    
+
     tr += '<option value="play_content">Jouer un fichier</option>';
     tr += '<option value="media_play">Lecture</option>';
     tr += '<option value="media_pause">Pause</option>';
     tr += '<option value="media_previous_track">Précédent</option>';
     tr += '<option value="media_next_track">Suivant</option>';
     tr += '<option value="start_app">Démarrer une application</option>';
-    
-    
+
+
     tr += '<option value="ircc">RAW</option>';
     tr += '</select></td>';
     tr += '<td>';
@@ -242,7 +242,7 @@ if (init(_cmd.type) == 'action') {
         id: $(".li_eqLogic.active").attr('data-eqLogic_id'),
         filter: {type: 'info'},
         error: function (error) {
-			$('#div_alert').showAlert({message: error.message, level: 'danger'});
+            $('#div_alert').showAlert({message: error.message, level: 'danger'});
         },
         success: function (result) {
             tr.find('.cmdAttr[data-l1key=value]').append(result);
@@ -280,11 +280,10 @@ $('#checkbox_psk').change(function() {
         //$( '.gettvpin').attr("disabled","disabled");
         //$( '.startdeamontv').attr("disabled","disabled");
     }
-}); 
+});
 
 $('#checkbox_psk').change(function() {
     if ($( 'input[data-l2key="psk"]').value() == ""){
     $('input[data-l2key="psk"]').value("1234");
 }
 });
-

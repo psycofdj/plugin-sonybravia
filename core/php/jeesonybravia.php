@@ -25,15 +25,14 @@ if (!jeedom::apiAccess(init('apikey'), 'sonybravia')) {
 
 $eqlogic = sonybravia::byLogicalId(init('mac'), 'sonybravia');
 if (!is_object($eqlogic)) {
-	die();
+    die();
 }
 $array_recu = "";
 foreach ($_GET as $key => $value) {
-	$array_recu = $array_recu . $key . '=' . $value . ' / ';
-	$cmd = $eqlogic->getCmd('info',$key);
-	if (is_object($cmd)) {
-		$cmd->event($value);
-	}
+    $array_recu = $array_recu . $key . '=' . $value . ' / ';
+    $cmd = $eqlogic->getCmd('info',$key);
+    if (is_object($cmd)) {
+        $cmd->event($value);
+    }
 }
 log::add('sonybravia', 'debug', 'Reception de : ' . $array_recu);
- 

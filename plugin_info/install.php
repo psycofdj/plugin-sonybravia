@@ -19,33 +19,27 @@
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
 function sonybravia_install() {
-	if (jeedom::isCapable('sudo')) {
-		exec(system::getCmdSudo() . ' chmod a+x ' . dirname(__FILE__) . '/../resources/install_apt.sh ' .' 2>&1 &');
-	}
-	else{
-		message::add('sonybravia', 'Erreur : Veuillez donner les droits sudo à Jeedom', null, null);
-	}
+    if (jeedom::isCapable('sudo')) {
+        exec(system::getCmdSudo() . ' chmod a+x ' . dirname(__FILE__) . '/../resources/install_apt.sh ' .' 2>&1 &');
+    }
+    else{
+        message::add('sonybravia', 'Erreur : Veuillez donner les droits sudo à Jeedom', null, null);
+    }
 }
 
 function sonybravia_update() {
-	message::add('sonybravia', 'Mise à jour en cours...', null, null);
-	if (jeedom::isCapable('sudo')) {
-		exec(system::getCmdSudo() . ' chmod a+x ' . dirname(__FILE__) . '/../resources/install_apt.sh ' .' 2>&1 &');
-		exec(system::getCmdSudo() . ' chmod a+x ' . dirname(__FILE__) . '/../resources/install_dependancy.sh ' .' 2>&1 &');
-	}
-	else{
-		message::add('sonybravia', 'Erreur : Veuillez donner les droits sudo à Jeedom', null, null);
-	}
-	message::removeAll('sonybravia');		
-	message::add('sonybravia', 'Mise à jour terminée', null, null);
+    message::add('sonybravia', 'Mise à jour en cours...', null, null);
+    if (jeedom::isCapable('sudo')) {
+        exec(system::getCmdSudo() . ' chmod a+x ' . dirname(__FILE__) . '/../resources/install_apt.sh ' .' 2>&1 &');
+        exec(system::getCmdSudo() . ' chmod a+x ' . dirname(__FILE__) . '/../resources/install_dependancy.sh ' .' 2>&1 &');
+    }
+    else{
+        message::add('sonybravia', 'Erreur : Veuillez donner les droits sudo à Jeedom', null, null);
+    }
+    message::removeAll('sonybravia');
+    message::add('sonybravia', 'Mise à jour terminée', null, null);
 }
 
 function sonybravia_remove() {
-
-	/*$cron = cron::byClassAndFunction('sony-bravia', 'CalculateOtherStats');
-    if (is_object($cron)) {
-        $cron->remove();
-    }*/
 }
-
 ?>
