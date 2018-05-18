@@ -21,9 +21,9 @@ require_once dirname(__FILE__) . "/../../../../core/php/core.inc.php";
 
 
 if (!jeedom::apiAccess(init('apikey'), 'sonybravia')) {
- http_response_code(403);
- echo __('Clef API non valide, vous n\'êtes pas autorisé à effectuer cette action (sonybravia)', __FILE__);
- die();
+    http_response_code(403);
+    echo __('Clef API non valide, vous n\'êtes pas autorisé à effectuer cette action (sonybravia)', __FILE__);
+    die();
 }
 
 $eqlogic = sonybravia::byLogicalId(init('mac'), 'sonybravia');

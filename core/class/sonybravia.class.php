@@ -108,7 +108,7 @@ class sonybravia extends eqLogic {
 		}
 
 		if ($deamon_info['launchable'] != 'ok') {
-			throw new Exception(__('Veuillez vérifier la configuration', __FILE__));
+			throw new \Exception(__('Veuillez vérifier la configuration', __FILE__));
 		}
 
         $callback_base = network::getNetworkAccess('internal', 'proto:localhost:port:comp');
@@ -151,7 +151,7 @@ class sonybravia extends eqLogic {
 
 	public static function tv_pairing($_ip, $_mac, $_psk, $_name) {
         if (($_ip == "") || ($_mac == "") || ($_name == "")) {
-            throw new Exception(__('Veuillez vérifier la configuration', __FILE__));
+            throw new \Exception(__('Veuillez vérifier la configuration', __FILE__));
         }
 
         $subcmd = ($_psk == "") ? "pair" : "confirm";
@@ -214,7 +214,7 @@ class sonybravia extends eqLogic {
 	public static function event() {
 		$cmd = sonybraviaCmd::byId(init('id'));
 		if (!is_object($cmd) || $cmd->getEqType() != 'sonybravia') {
-			throw new Exception(__('Commande ID virtuel inconnu, ou la commande n\'est pas de type virtuel : ', __FILE__) . init('id'));
+			throw new \Exception(__('Commande ID virtuel inconnu, ou la commande n\'est pas de type virtuel : ', __FILE__) . init('id'));
 		}
 		$cmd->event(init('value'));
 	}
@@ -240,22 +240,6 @@ class sonybravia extends eqLogic {
 		return $return;
 	}
 
-	/*     * *********************Methode d'instance************************* */
-	/*public function refresh() {
-      try {
-      foreach ($this->getCmd('info') as $cmd) {
-      if ($cmd->getConfiguration('calcul') == '' || $cmd->getConfiguration('sonybraviaAction', 0) != '0') {
-      continue;
-      }
-      $value = $cmd->execute();
-      if ($cmd->execCmd() != $cmd->formatValue($value)) {
-      $cmd->event($value);
-      }
-      }
-      } catch (Exception $exc) {
-      log::add('sonybravia', 'error', __('Erreur pour ', __FILE__) . $eqLogic->getHumanName() . ' : ' . $exc->getMessage());
-      }
-      }*/
 
 	public function postSave() {
 		/*$refresh = $this->getCmd(null, 'refresh');
@@ -269,139 +253,133 @@ class sonybravia extends eqLogic {
           $refresh->setSubType('other');
           $refresh->setEqLogic_id($this->getId());
           $refresh->save();*/
-	}
-
-	public function copyFromEqLogic($_eqLogic_id) {
-		$eqLogic = eqLogic::byId($_eqLogic_id);
-		if (!is_object($eqLogic)) {
-			throw new Exception(__('Impossible de trouver l\'équipement : ', __FILE__) . $_eqLogic_id);
-		}
-		if ($eqLogic->getEqType_name() == 'sonybravia') {
-			throw new Exception(__('Vous ne pouvez importer la configuration d\'un équipement virtuel', __FILE__));
-		}
-		foreach ($eqLogic->getCategory() as $key => $value) {
-			$this->setCategory($key, $value);
-		}
-		foreach ($eqLogic->getCmd() as $cmd_def) {
-			$cmd_name = $cmd_def->getName();
-			if ($cmd_name == __('Rafraichir')) {
-				$cmd_name .= '_1';
-			}
-			$cmd = new sonybraviaCmd();
-			$cmd->setName($cmd_name);
-			$cmd->setEqLogic_id($this->getId());
-			$cmd->setIsVisible($cmd_def->getIsVisible());
-			$cmd->setType($cmd_def->getType());
-			$cmd->setUnite($cmd_def->getUnite());
-			$cmd->setOrder($cmd_def->getOrder());
-			$cmd->setDisplay('icon', $cmd_def->getDisplay('icon'));
-			$cmd->setDisplay('invertBinary', $cmd_def->getDisplay('invertBinary'));
-			$cmd->setConfiguration('listValue', $cmd_def->getConfiguration('listValue',''));
-			foreach ($cmd_def->getTemplate() as $key => $value) {
-				$cmd->setTemplate($key, $value);
-			}
-			$cmd->setSubType($cmd_def->getSubType());
-			if ($cmd->getType() == 'info') {
-				$cmd->setConfiguration('calcul', '#' . $cmd_def->getId() . '#');
-				$cmd->setValue($cmd_def->getId());
-			} else {
-				$cmd->setValue($cmd_def->getValue());
-				$cmd->setConfiguration('infoName', '#' . $cmd_def->getId() . '#');
-			}
-			try {
-				$cmd->save();
-			} catch (Exception $e) {
-
-			}
-		}
-		$this->save();
-	}
-
-	/*     * **********************Getteur Setteur*************************** */
-}
-
-class sonybraviaCmd extends cmd {
-	/*     * *************************Attributs****************************** */
-
-	/*     * ***********************Methode static*************************** */
-
-	/*     * *********************Methode d'instance************************* */
-
-	public function dontRemoveCmd() {
-		if ($this->getLogicalId() == 'refresh') {
-			return true;
-		}
-		return false;
-	}
-
-	public function preSave() {
-		if ($this->getConfiguration('sonybraviaAction') == 1) {
-			$actionInfo = sonybraviaCmd::byEqLogicIdCmdName($this->getEqLogic_id(), $this->getName());
-			if (is_object($actionInfo)) {
-				$this->setId($actionInfo->getId());
-			}
-		}
-        /*if ($this->getLogicalId() == "turn_on" || $this->getLogicalId() == "turn_off" || $this->getLogicalId() == "volume_up" || $this->getLogicalId() == "volume_down"  || $this->getLogicalId() == "mute_volume") {
-          $this->setConfiguration('param', '1');
-          }*/
-	}
-
-	public function postSave() {
-		if ($this->getType() == 'info' && $this->getConfiguration('sonybraviaAction', 0) == '0' && $this->getConfiguration('calcul') != '') {
-			$this->event($this->execute());
-		}
-	}
-
-	public function execute($_options = null) {
-		switch ($this->getType()) {
-        case 'info':
-            if ($this->getConfiguration('sonybraviaAction', 0) == '0') {
+        public function copyFromEqLogic($_eqLogic_id) {
+            $eqLogic = eqLogic::byId($_eqLogic_id);
+            if (!is_object($eqLogic)) {
+                throw new Exception(__('Impossible de trouver l\'équipement : ', __FILE__) . $_eqLogic_id);
+            }
+            if ($eqLogic->getEqType_name() == 'sonybravia') {
+                throw new Exception(__('Vous ne pouvez importer la configuration d\'un équipement virtuel', __FILE__));
+            }
+            foreach ($eqLogic->getCategory() as $key => $value) {
+                $this->setCategory($key, $value);
+            }
+            foreach ($eqLogic->getCmd() as $cmd_def) {
+                $cmd_name = $cmd_def->getName();
+                if ($cmd_name == __('Rafraichir')) {
+                    $cmd_name .= '_1';
+                }
+                $cmd = (new sonybraviaCmd())
+                     ->setName($cmd_name)
+                     ->setEqLogic_id($this->getId())
+                     ->setIsVisible($cmd_def->getIsVisible())
+                     ->setType($cmd_def->getType())
+                     ->setUnite($cmd_def->getUnite())
+                     ->setOrder($cmd_def->getOrder())
+                     ->setDisplay('icon', $cmd_def->getDisplay('icon'))
+                     ->setDisplay('invertBinary', $cmd_def->getDisplay('invertBinary'))
+                     ->setConfiguration('listValue', $cmd_def->getConfiguration('listValue',''));
+                foreach ($cmd_def->getTemplate() as $key => $value) {
+                    $cmd->setTemplate($key, $value);
+                }
+                $cmd->setSubType($cmd_def->getSubType());
+                if ($cmd->getType() == 'info') {
+                    $cmd->setConfiguration('calcul', '#' . $cmd_def->getId() . '#')
+                                                         ->setValue($cmd_def->getId());
+                } else {
+                    $cmd->setValue($cmd_def->getValue())
+                        ->setConfiguration('infoName', '#' . $cmd_def->getId() . '#');
+                }
                 try {
-                    $result = jeedom::evaluateExpression($this->getConfiguration('calcul'));
-                    if ($this->getSubType() == 'numeric') {
-                        if (is_numeric($result)) {
-                            $result = number_format($result, 2);
-                        } else {
-                            $result = str_replace('"', '', $result);
+                    $cmd->save();
+                } catch (\Exception $e) {
+
+                }
+            }
+            $this->save();
+        }
+
+            /*     * **********************Getteur Setteur*************************** */
+            }
+
+    class sonybraviaCmd extends cmd {
+        /*     * *************************Attributs****************************** */
+
+        /*     * ***********************Methode static*************************** */
+
+        /*     * *********************Methode d'instance************************* */
+
+        public function dontRemoveCmd() {
+            if ($this->getLogicalId() == 'refresh') {
+                return true;
+            }
+            return false;
+        }
+
+        public function preSave() {
+            if ($this->getConfiguration('sonybraviaAction') == 1) {
+                $actionInfo = sonybraviaCmd::byEqLogicIdCmdName($this->getEqLogic_id(), $this->getName());
+                if (is_object($actionInfo)) {
+                    $this->setId($actionInfo->getId());
+                }
+            }
+        }
+
+        public function postSave() {
+            if ($this->getType() == 'info' && $this->getConfiguration('sonybraviaAction', 0) == '0' && $this->getConfiguration('calcul') != '') {
+                $this->event($this->execute());
+            }
+        }
+
+        public function execute($_options = null) {
+            switch ($this->getType()) {
+            case 'info':
+                if ($this->getConfiguration('sonybraviaAction', 0) == '0') {
+                    try {
+                        $result = jeedom::evaluateExpression($this->getConfiguration('calcul'));
+                        if ($this->getSubType() == 'numeric') {
+                            if (is_numeric($result)) {
+                                $result = number_format($result, 2);
+                            } else {
+                                $result = str_replace('"', '', $result);
+                            }
+                            if (strpos($result, '.') !== false) {
+                                $result = str_replace(',', '', $result);
+                            } else {
+                                $result = str_replace(',', '.', $result);
+                            }
                         }
-                        if (strpos($result, '.') !== false) {
-                            $result = str_replace(',', '', $result);
-                        } else {
-                            $result = str_replace(',', '.', $result);
-                        }
+                        return $result;
+                    } catch (\Exception $e) {
+                        log::add('sonybravia', 'info', $e->getMessage());
+                        return jeedom::evaluateExpression($this->getConfiguration('calcul'));
                     }
-                    return $result;
+                }
+                break;
+            case 'action':
+                try {
+                    $sonybravia = $this->getEqLogic();
+                    $args = array(
+                        "cmd",
+                        "--tv-ip="       . $sonybravia->getConfiguration('ipadress'),
+                        "--tv-mac="      . $sonybravia->getLogicalId(),
+                        "--tv-pin="      . $sonybravia->getConfiguration('psk'),
+                        "--jeedom-name=" . $sonybravia->getName(),
+                        "--log-level="   . log::convertLogLevel(log::getLogLevel('sonybravia')),
+                        "--command="     . $this->getLogicalId(),
+                    );
+                    $sonybravia_path = realpath(dirname(__FILE__) . '/../../resources');
+                    if($this->getConfiguration('param') !== ""){
+                        array_push($args, "--param='" . $this->getConfiguration('param') . "'");
+                    }
+                    $cmd = sprintf("%s python3 %s/sonybravia.py %s", system::getCmdSudo(), $sonybravia_path, join(" ", $args));
+                    log::add('sonybravia', 'info', 'Lancement commande sonybravia : ' . $cmd);
+                    $result = exec($cmd . ' >> ' . log::getPathToLog('sonybravia') . ' 2>&1 &');
                 } catch (Exception $e) {
                     log::add('sonybravia', 'info', $e->getMessage());
-                    return jeedom::evaluateExpression($this->getConfiguration('calcul'));
                 }
+                break;
             }
-            break;
-        case 'action':
-            try {
-                $sonybravia = $this->getEqLogic();
-                $args = array(
-                    "cmd",
-                    "--tv-ip="       . $sonybravia->getConfiguration('ipadress'),
-                    "--tv-mac="      . $sonybravia->getLogicalId(),
-                    "--tv-pin="      . $sonybravia->getConfiguration('psk'),
-                    "--jeedom-name=" . $sonybravia->getName(),
-                    "--log-level="   . log::convertLogLevel(log::getLogLevel('sonybravia')),
-                    "--command="     . $this->getLogicalId(),
-                );
-                $sonybravia_path = realpath(dirname(__FILE__) . '/../../resources');
-                if($this->getConfiguration('param') !== ""){
-                    array_push($args, "--param='" . $this->getConfiguration('param') . "'");
-                }
-                $cmd = sprintf("%s python3 %s/sonybravia.py %s", system::getCmdSudo(), $sonybravia_path, join(" ", $args));
-                log::add('sonybravia', 'info', 'Lancement commande sonybravia : ' . $cmd);
-                $result = exec($cmd . ' >> ' . log::getPathToLog('sonybravia') . ' 2>&1 &');
-            } catch (Exception $e) {
-                log::add('sonybravia', 'info', $e->getMessage());
-            }
-            break;
-		}
-	}
+        }
 
-	/*     * **********************Getteur Setteur*************************** */
-}
+    }
