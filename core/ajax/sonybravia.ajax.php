@@ -15,21 +15,21 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 try {
-	require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
-	include_file('core', 'authentification', 'php');
-	if (!isConnect('admin')) {
-		throw new \Exception('401 Unauthorized');
-	}
-	ajax::init();
+    require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
+    include_file('core', 'authentification', 'php');
+    if (!isConnect('admin')) {
+        throw new \Exception('401 Unauthorized');
+    }
+    ajax::init();
 
-	if (init('action') == 'startdeamon') {
-		sonybravia::tv_deamon_start(init('ip'), init('mac'), init('psk'), init('name'));
-		ajax::success();
-	}
+    if (init('action') == 'startdeamon') {
+        sonybravia::tv_deamon_start(init('ip'), init('mac'), init('psk'), init('name'));
+        ajax::success();
+    }
 
     if (init('action') == 'pairing') {
         $status = sonybravia::tv_pairing(init('ip'), init('mac'), "", init('name'));
-		if ($status == 0) {
+        if ($status == 0) {
             ajax::success();
         } else {
             ajax::error(array("status" => $status));
@@ -38,7 +38,7 @@ try {
 
     if (init('action') == 'confirm') {
         $status = sonybravia::tv_pairing(init('ip'), init('mac'), init('psk'), init('name'));
-		if ($status == 0) {
+        if ($status == 0) {
             sonybravia::tv_deamon_start(init('ip'), init('mac'), init('psk'), init('name'));
             ajax::success();
         } else {
@@ -46,20 +46,20 @@ try {
         }
     }
 
-	if (init('action') == 'stopdeamon') {
-		sonybravia::tv_deamon_stop(init('mac'));
-		ajax::success();
-	}
+    if (init('action') == 'stopdeamon') {
+        sonybravia::tv_deamon_stop(init('mac'));
+        ajax::success();
+    }
 
-	if (init('action') == 'deamon_info') {
-		$return = array();
-		$resultat = sonybravia::tv_deamon_info(init('mac'));
-		ajax::success($return['result'] = $resultat);
-	}
+    if (init('action') == 'deamon_info') {
+        $return = array();
+        $resultat = sonybravia::tv_deamon_info(init('mac'));
+        ajax::success($return['result'] = $resultat);
+    }
 
-	throw new \Exception('Aucune methode correspondante');
-	/*     * *********Catch exeption*************** */
+    throw new \Exception('Aucune methode correspondante');
+    /*     * *********Catch exeption*************** */
 } catch (\Exception $e) {
-	ajax::error(displayExeption($e), $e->getCode());
+    ajax::error(displayExeption($e), $e->getCode());
 }
 
