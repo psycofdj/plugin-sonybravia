@@ -23,26 +23,40 @@ try {
 	ajax::init();
 
 	if (init('action') == 'startdeamon') {
-		sonybravia::tv_deamon_start(init('ip'), init('mac'), init('psk'), init('cookie'));
+		sonybravia::tv_deamon_start(init('ip'), init('mac'), init('psk'), init('name'));
 		ajax::success();
 	}
-        
-        if (init('action') == 'startdeamon_recuppin') {
-		sonybravia::tv_deamon_pin(init('ip'), init('mac'), init('psk'), init('cookie'));
-		ajax::success();
-	}
-	
+
+    if (init('action') == 'pairing') {
+        $status = sonybravia::tv_pairing(init('ip'), init('mac'), "", init('name'));
+		if ($status == 0) {
+            ajax::success();
+        } else {
+            ajax::error(array("status" => $status));
+        }
+    }
+
+    if (init('action') == 'confirm') {
+        $status = sonybravia::tv_pairing(init('ip'), init('mac'), init('psk'), init('name'));
+		if ($status == 0) {
+            sonybravia::tv_deamon_start(init('ip'), init('mac'), init('psk'), init('name'));
+            ajax::success();
+        } else {
+            ajax::error(array("status" => $status));
+        }
+    }
+
 	if (init('action') == 'stopdeamon') {
 		sonybravia::tv_deamon_stop(init('mac'));
 		ajax::success();
 	}
-	
+
 	if (init('action') == 'deamon_info') {
 		$return = array();
 		$resultat = sonybravia::tv_deamon_info(init('mac'));
 		ajax::success($return['result'] = $resultat);
 	}
-	
+
 	throw new Exception('Aucune methode correspondante');
 	/*     * *********Catch exeption*************** */
 } catch (Exception $e) {

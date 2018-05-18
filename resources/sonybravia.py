@@ -1,238 +1,362 @@
 #!/usr/bin/env python3
-#
-#
+# -*- coding: utf-8 -*-
+
 import os
-from bravia import BraviaRC
 import sys
 import time
 import threading
-from optparse import OptionParser
-from datetime import datetime
+import queue
 import signal
-import subprocess
+import argparse
+import logging
+import json
+import requests
+from braviarc import BraviaRC
 
-### Enter the IP address, PSK and MAC address of the TV below
-ip = ''
-psk = ''
-mac = ''
-apikey = ''
-jeedomadress = ''
+class JeedomWorker(threading.Thread):
+  def __init__(self, queue, jeedom_url, jeedom_key, tv_mac, delay=1):
+    super().__init__()
+    self.waitter = threading.Event()
+    self.queue = queue
+    self.delay = delay
+    self.data  = {}
+    self.jeedom_key = jeedom_key
+    self.jeedom_url = jeedom_url
+    self.tv_mac = tv_mac
+    self.log = logging.getLogger(__name__)
 
-class SonyBravia:
-	""" Fetch teleinformation datas and call user callback
-	each time all data are collected
-	"""
- 
-	def __init__(self, ipadress, macadress, psk, apikey, jeedomadress):
-		self._ipadress = ipadress
-		self._macadress = macadress
-		self._psk = psk
-		self._apikey = apikey
-		self._jeedomadress = jeedomadress
-		self._braviainstance = BraviaRC(self._ipadress, self._psk, self._macadress)
+  def run(self):
+    self.waitter.clear()
+    while not self.waitter.is_set():
+      try:
+        data = self.queue.get(block=False)
+        self.handle(data)
+      except queue.Empty:
+        pass
+      self.waitter.wait(self.delay)
 
-	def run(self):
-		Donnees = {}
-		_Donnees = {}
-		_RAZ = datetime.now()
-		Sources = {}
-		Apps = {}
-		_RazCalcul = 0
-		_Separateur = "&"
-		_SendData = ""
-		def target():
-			self.process = None
-			#logger.debug("Thread started, timeout = " + str(timeout)+", command : "+str(self.cmd))
-			self.process = subprocess.Popen(self.cmd + _SendData, shell=True)
-			#print(self.cmd + _SendData)
-			self.process.communicate()
-			#logger.debug("Return code: " + str(self.process.returncode))
-			#logger.debug("Thread finished")
-			self.timer.cancel()
+  def stop(self):
+    self.waitter.set()
 
-		def timer_callback():
-			#logger.debug("Thread timeout, terminate it")
-			if self.process.poll() is None:
-				try:
-					self.process.kill()
-				except OSError as error:
-					#logger.error("Error: %s " % error)
-					self._log.error("Error: %s " % error)
-				self._log.warning("Thread terminated")
-			else:
-				self._log.warning("Thread not alive")
-		tvstatus = ""
-		try:
-			Sources = self._braviainstance.load_source_list()
-			Apps = self._braviainstance.load_app_list()
-			for cle, valeur in Sources.items():
-				_tmp += cle.replace(' ' , '%20')
-				_tmp += "|"
-			#print (_tmp)
-			Donnees["sources"] = _tmp
-			_tmp = ""
-			for cle, valeur in Apps.items():
-				_tmp += cle.replace(' ' , '%20') + "|"
-			_tmp = _tmp.replace('&', '%26')
-			_tmp = _tmp.replace('\'', '%27')
-			Donnees["apps"] = _tmp
-		except Exception:
-					errorCom = "Connection error"
-		while(1):
-			_RazCalcul = datetime.now() - _RAZ
-			if(_RazCalcul.seconds > 8):
-				_RAZ = datetime.now()
-				del Donnees
-				del _Donnees
-				Donnees = {}
-				_Donnees = {}
-			_SendData = ""
-			try:
-				tvstatus = self._braviainstance.get_power_status()
-				Donnees["status"] = tvstatus
-			except KeyError:
-				print('TV not found')
-				sys.exit()
-			if tvstatus == 'active':
-				try:
-					tvinfo = self._braviainstance.get_system_info()
-					Donnees["model"] = tvinfo['model']
-				except:
-					print('Model not found')
-				try:
-					vol = self._braviainstance.get_volume_info()
-					Donnees["volume"] = str(vol['volume'])
-				except:
-					print('Volume not found')
-				try:
-					tvPlaying = self._braviainstance.get_playing_info()
-					#print (tvPlaying)
-					if not tvPlaying:
-						Donnees["source"] = "Application"
-						Donnees["program"] = ""
-						Donnees["nom_chaine"] = ""
-						Donnees["debut"] = ""
-						Donnees["debut_p"] = ''
-						Donnees["fin_p"] = ''
-						Donnees["pourcent_p"] = '0'
-						Donnees["duree"] = ""
-						Donnees["chaine"] = ""
-					else:
-						Donnees["source"] = ((tvPlaying['source'])[-4:]).upper() + (tvPlaying['uri'])[-1:]
-						try:
-							if tvPlaying['dispNum'] is not None :
-								Donnees["chaine"] = tvPlaying['dispNum'].replace('\'','%27').replace(' ','%20').replace('é','%C3%A9')
-						except:
-							print('num chaine not found')
-						try:
-							if tvPlaying['programTitle'] is not None :
-								Donnees["program"] = tvPlaying['programTitle'].replace(' ','%20').replace('é','%C3%A9').replace('\'','%27')
-						except:
-							print('program info not found')
-						try:
-							if tvPlaying['title'] is not None :
-								Donnees["nom_chaine"] = tvPlaying['title'].replace(' ','%20').replace('\'','%27').replace('é','%C3%A9')
-						except:
-							print('nom chaine not found')
-						try:
-							if tvPlaying['startDateTime'] is not None :
-								if tvPlaying['startDateTime'] != '':
-									Donnees["debut"] = tvPlaying['startDateTime']
-									Donnees["debut_p"], Donnees["fin_p"], Donnees["pourcent_p"] = self._braviainstance.playing_time(tvPlaying['startDateTime'],tvPlaying['durationSec'])
-								else:
-									Donnees["debut_p"] = ''
-									Donnees["fin_p"] = ''
-									Donnees["pourcent_p"] = '0'
-						except:
-							print('start date not found')
-						try:
-							if tvPlaying['durationSec'] is not None :
-								if tvPlaying['durationSec'] != '':
-									Donnees["duree"] = str(tvPlaying['durationSec'])
-								else:
-									Donnees["duree"] = '0'
-						except:
-							print('duration not found')
-				except:
-					print('Playing Info not found')
-			else:
-				try:
-					Donnees["source"] = ""
-					Donnees["program"] = ""
-					Donnees["nom_chaine"] = ""
-					Donnees["debut"] = ""
-					Donnees["debut_p"] = ''
-					Donnees["fin_p"] = ''
-					Donnees["pourcent_p"] = '0'
-					Donnees["duree"] = ""
-					Donnees["chaine"] = ""
-					Donnees["volume"] = ""
-				except:
-					print('Cannot reset Playing Info')
-			self.cmd = "curl -L -s -G --max-time 15 " + self._jeedomadress + " -d 'apikey=" + self._apikey + "&mac=" + self._macadress
-			for cle, valeur in Donnees.items():
-				if(cle in _Donnees):
-					if (Donnees[cle] != _Donnees[cle]):
-						_SendData += _Separateur + cle +'='+ valeur
-						_Donnees[cle] = valeur
-				else:
-					_SendData += _Separateur + cle +'='+ valeur
-					_Donnees[cle] = valeur
-			_SendData += "'"
-			if _SendData != "'":
-				try:
-					thread = threading.Thread(target=target)
-					self.timer = threading.Timer(int(5), timer_callback)
-					self.timer.start()
-					thread.start()
-				except Exception:
-					errorCom = "Connection error"
-			time.sleep(2)
+  def handle(self, data):
+    left = {}
+    for key, val in data.items():
+      if (key not in self.data) or (self.data[key] != val):
+        left[key] = val
+    if 0 != len(left):
+      if True == self.send(left):
+        self.data = data
 
-	def exit_handler(self, *args):
-		self.terminate()
+  def send(self, changed):
+    if "sources" in changed:
+      changed["sources"] = "|".join(changed["sources"].keys())
+    if "apps" in changed:
+      changed["apps"] = "|".join(changed["apps"].keys())
+    if "ircc_commands" in changed:
+      changed["ircc_commands"] = "|".join(changed["ircc_commands"])
 
+    params = {
+      "mac" : self.tv_mac,
+      "apikey" : self.jeedom_key,
+    }
+
+    try:
+      payload = json.dumps(changed, ensure_ascii=False).encode("utf-8")
+      self.log.info("sending changed values to jeedom url %s", self.jeedom_url)
+      self.log.debug("changed values : %s", payload)
+      r = requests.post(self.jeedom_url, data=changed, params=params, timeout=10)
+      r.raise_for_status()
+      return True
+    except requests.HTTPError as err:
+      self.log.error("jeedom http error: %s (%s)", str(err), r.content)
+    except Exception as err:
+      self.log.error("unknown error: %s", str(err))
+    return False
+
+class TvWorker(threading.Thread):
+  def __init__(self, braviarc, queue, delay=2):
+    super().__init__()
+    self.waitter = threading.Event()
+    self.braviarc = braviarc
+    self.queue = queue
+    self.delay = delay
+    self.sources = {}
+    self.apps = {}
+    self.commands = {}
+    self.log = logging.getLogger(__name__)
+
+  def run(self):
+    self.waitter.clear()
+    while not self.waitter.is_set():
+      try:
+        data = self.fetch_data()
+        self.queue.put(data)
+      except Exception as error:
+        self.log.warning("got runtime error: %s", str(error))
+      self.waitter.wait(self.delay)
+
+  def stop(self):
+    self.waitter.set()
+
+  def fetch_static(self):
+    """
+    sources and apps are 'cached' since:
+    1. they're long to fetch
+    2. they doesn't change often
+    3. information is mostly unavailable (TV off)
+    """
+    if self.sources == {}:
+      self.log.info("fetching source list")
+      self.sources = self.braviarc.load_source_list()
+
+    if self.apps == {}:
+      self.log.info("fetching app list")
+      self.apps = self.braviarc.load_app_list()
+
+    if self.commands == {}:
+      self.log.info("fetching command list")
+      self.braviarc._refresh_commands()
+      self.commands = [ x['name'] for x in self.braviarc._commands ]
+
+  def fetch_data(self):
+    res = {
+      "program"       : "",
+      "nom_chaine"    : "",
+      "debut"         : "",
+      "debut_p"       : "",
+      "fin_p"         : "",
+      "pourcent_p"    : "0",
+      "duree"         : "",
+      "chaine"        : "",
+      "source"        : "",
+      "model"         : "",
+      "volume"        : "",
+      "sources"       : self.sources,
+      "apps"          : self.apps,
+      "ircc_commands" : self.commands,
+    }
+    res["status"]  = self.braviarc.get_power_status()
+    if res["status"] == "active":
+      self.fetch_static()
+      res["sources"]       = self.sources
+      res["apps"]          = self.apps
+      res["ircc_commands"] = self.commands
+
+      info = self.braviarc.get_system_info()
+      if info and "model" in info:
+        res["model"] = info["model"]
+
+      info = self.braviarc.get_volume_info()
+      if info and "volume" in info:
+        res["volume"] = info["volume"]
+
+      res["source"] = "Application"
+      play_info = self.braviarc.get_playing_info()
+      if play_info:
+        res["source"]     = play_info['source'][-4:].upper() + play_info['uri'][-1:]
+        res["chaine"]     = play_info.get("dispNum", "")
+        res["program"]    = play_info.get("programTitle", "")
+        res["nom_chaine"] = play_info.get("title", "")
+        res["duree"]      = play_info.get("durationSec", "0")
+        res["debut"]      = play_info.get("startDateTime", "")
+        if res["debut"] and res["duree"]:
+          s, e, p, = self.braviarc.playing_time(play_info["debut"], res["duree"])
+          res["debut_p"], res["fin_p"], res["pourcent_p"] = (s, e, p)
+    return res
+
+class BraviaApp:
+  def parse_args(self):
+    # common arguments
+    parent = argparse.ArgumentParser(add_help=False)
+    parent.add_argument("--jeedom-name", metavar="<str>", help="device name",           required=True)
+    parent.add_argument("--tv-ip",       metavar="<ip>",  help="tv ip address",         required=True)
+    parent.add_argument("--tv-mac",      metavar="<str>", help="tv mac address",        required=True)
+    parent.add_argument("--log-level",   metavar="<str>", help="log level",             default="info")
+
+    # subcommands parser
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(title="subcommands", help="available sub-commands:")
+
+    # subcommand daemon
+    daemon = subparsers.add_parser("daemon", parents=[parent], help="runs daemon listening to TV changes and pushes to given callback ")
+    daemon.add_argument("--tv-pin",     metavar="<int>",  help="tv PIN",                required=True)
+    daemon.add_argument("--jeedom-key", metavar="<str>",  help="jeedom api key",        required=True)
+    daemon.add_argument("--jeedom-url", metavar="<url>",  help="jeedom callback url",   required=True)
+    daemon.add_argument("--pid-file",   metavar="<path>", help="pid file path",         default=None)
+    daemon.set_defaults(func=self.run_daemon)
+
+    # subcommand pair
+    pair = subparsers.add_parser("pair", parents=[parent], help="starts PIN pairing procedure")
+    pair.set_defaults(func=self.run_pair)
+
+    # subcommand pair
+    confirm = subparsers.add_parser("confirm", parents=[parent], help="confirm PIN pairing procedure")
+    confirm.add_argument("--tv-pin", metavar="<int>", help="tv PIN", required=True)
+    confirm.set_defaults(func=self.run_confirm)
+
+    # subcommand cmd
+    cmd = subparsers.add_parser("cmd", parents=[parent], help="send commands to TV")
+    cmd.add_argument("--tv-pin",  metavar="<int>",  help="tv PIN",            required=True)
+    cmd.add_argument("--command", metavar="<str>",  help="command name",      required=True)
+    cmd.add_argument("--param",   metavar="<str>",  help="command parameter", default=None)
+    cmd.set_defaults(func=self.run_cmd)
+    parser.parse_args(namespace=self)
+
+  def execute(self):
+    self.parse_args()
+    self.init_logging()
+    self.braviarc = BraviaRC(self.tv_ip, self.tv_mac)
+    self.func()
+
+  def run_daemon(self):
+    self.connect(pairing=False)
+    self.write_pidfile()
+    signal.signal(signal.SIGTERM, lambda x,y: self.daemon_stop())
+    self.daemon_start()
+    self.daemon_join()
+
+  def run_pair(self):
+    self.tv_pin = "0000"
+    self.connect(pairing=True)
+
+  def run_confirm(self):
+    self.connect(pairing=False)
+
+  def run_cmd(self):
+    if self.command == "turn_on":
+      self.braviarc.turn_on(try_ircc=False)
+      sys.exit(0)
+
+    self.connect(auto=False)
+    commands = {
+      "turn_off"             : self.braviarc.turn_off,
+      "volume_up"            : self.braviarc.volume_up,
+      "volume_down"          : self.braviarc.volume_down,
+      "media_play"           : self.braviarc.media_play,
+      "media_pause"          : self.braviarc.media_pause,
+      "media_previous_track" : self.braviarc.media_previous_track,
+      "media_next_track"     : self.braviarc.media_next_track,
+      "mute_volume"          : self.braviarc.mute_volume,
+    }
+    commands_arg = {
+      'select_source' : self.braviarc.select_source,
+      'set_volume'    : self.braviarc.set_volume_level,
+      'start_app'     : self.braviarc.start_app,
+      'play_content'  : self.braviarc.play_content,
+      "command"       : self.braviarc.send_command,
+      "ircc"          : self.cmd_ircc
+    }
+    if self.command in commands:
+      self.log.info("running command: %s", self.command)
+      commands[self.command]()
+      sys.exit(0)
+    if self.command in commands_arg:
+      self.log.info("running parametric command: %s(%s)", self.command, self.param)
+      commands_arg[self.command](self.param)
+      sys.exit(0)
+    self.log.error("unknown command: %s", self.command)
+    sys.exit(1)
+
+  def cmd_ircc(self, params):
+    for code in params.split(";"):
+      self.braviarc.send_req_ircc(code)
+      time.sleep(0.25)
+
+  def connect(self, awaked=False, pairing=False, auto=True):
+    self.log.info("connecting to tv on %s", self.tv_ip)
+    connected, powered, authorized = self.braviarc.connect(self.tv_pin, self.jeedom_name, self.jeedom_name)
+
+    if not connected:
+      if not awaked and auto:
+        self.log.info("unable to connect to tv on %s, trying wake-on-lan on %s", self.tv_ip, self.tv_mac)
+        self.braviarc._wakeonlan()
+        time.sleep(20)
+        return self.connect(awaked=True, pairing=pairing, auto=auto)
+      self.log.info("still unable to connect to tv on %s after wake-on-lan", self.tv_ip)
+      sys.exit(1)
+    self.log.info("successfully connected to %s", self.tv_ip)
+
+    if not powered:
+      if not awaked and auto:
+        self.log.info("tv is not powered, trying wake-on-lan on %s", self.tv_mac)
+        self.braviarc._wakeonlan()
+        time.sleep(20)
+        return self.connect(awaked=True, pairing=pairing, auto=auto)
+      self.log.error("tv still not powered after wake-on-lan on %s", self.tv_mac)
+      sys.exit(2)
+    self.log.info("tv is properly powered")
+
+    if not authorized:
+      if pairing:
+        self.log.info("pairing request success, please register PIN at screen")
+        sys.exit(0)
+      self.log.error("could not register with tv %s with device=%s pin=%s ", self.tv_ip, self.jeedom_name, self.tv_pin)
+      sys.exit(3)
+
+    if pairing:
+      self.log.error("pairing request failed, device %s is already registered with tv", self.jeedom_name)
+      sys.exit(4)
+    self.log.info("successfully authorized on tv %s ", self.tv_ip)
+
+    if awaked and auto:
+      self.log.info("shutting down tv since it was awakened")
+      self.braviarc.turn_off()
+      time.sleep(5)
+
+  def daemon_start(self):
+    self.log.info("starting daemon")
+    data_queue = queue.Queue()
+    self.jeedomWorker = JeedomWorker(data_queue,
+                                     self.jeedom_url,
+                                     self.jeedom_key,
+                                     self.tv_mac)
+    self.tvWorker = TvWorker(self.braviarc, data_queue)
+    self.jeedomWorker.start()
+    self.tvWorker.start()
+
+  def daemon_stop(self):
+    self.log.info("stopping daemon")
+    self.jeedomWorker.stop()
+    self.tvWorker.stop()
+
+  def daemon_join(self):
+    try:
+      self.jeedomWorker.join()
+      self.tvWorker.join()
+    except KeyboardInterrupt:
+      self.log.debug("received Ctrl-C, exiting threads")
+      self.daemon_stop()
+      self.daemon_join()
+
+  def init_logging(self):
+    level = logging.INFO
+    self.log_level = self.log_level.lower()
+    if self.log_level == "info":
+      level = logging.INFO
+    elif self.log_level == "error":
+      level = logging.ERROR
+    elif self.log_level == "debug":
+      level = logging.DEBUG
+    elif self.log_level == "warning":
+      level = logging.WARN
+    fmt = "%(asctime)s [%(levelname)s] %(message)s"
+    if level == logging.DEBUG:
+      fmt = "%(asctime)s [%(levelname)s] %(message)s (%(module)s in %(pathname)s:%(lineno)s)"
+    logging.basicConfig(format=fmt, level=logging.ERROR, stream=sys.stdout)
+    self.log = logging.getLogger(__name__)
+    self.log.setLevel(level)
+
+  def get_pidfile(self):
+    if self.pid_file is None:
+      return "/tmp/jeedom/sonybravia/sonybravia_%s.pid" % self.tv_mac.replace(":", "")
+    return self.pid_file
+
+  def write_pidfile(self):
+    pidfile = self.get_pidfile()
+    with open(pidfile, "w") as pid:
+      pid.write("%s\n" % os.getpid())
+      self.log.info("writing pid to file '%s'" % pidfile)
 
 if __name__ == "__main__":
-	usage = "usage: %prog [options]"
-	parser = OptionParser(usage)
-	parser.add_option("-t", "--tvip", dest="ip", help="IP de la tv")
-	parser.add_option("-m", "--mac", dest="mac", help="IP de la tv")
-	parser.add_option("-s", "--psk", dest="psk", help="Cle")
-	parser.add_option("-k", "--apikey", dest="apikey", help="IP de la tv")
-	parser.add_option("-a", "--jeedomadress", dest="jeedomadress", help="IP de la tv")
-	(options, args) = parser.parse_args()
-	if options.ip:
-		try:
-			ip = options.ip
-		except:
-			print('Erreur d ip de la tv')
-	if options.mac:
-		try:
-			mac = options.mac
-		except:
-			print('Erreur mac de la tv')
-	if options.psk:
-		try:
-			psk = options.psk
-		except:
-			print('Erreur psk de la tv')
-	if options.apikey:
-		try:
-			apikey = options.apikey
-		except:
-			print('Erreur apikey de jeedom')
-	if options.jeedomadress:
-		try:
-			jeedomadress = options.jeedomadress
-		except:
-			print('Erreur adresse de jeedom')
-	pid = str(os.getpid())
-	tmpmac = mac.replace(":","")
-	file = open("/tmp/jeedom/sonybravia/sonybravia_"+tmpmac+".pid", "w")
-	file.write("%s\n" % pid) 
-	file.close()
-	sonybravia = SonyBravia(ip, mac, psk, apikey, jeedomadress)
-	signal.signal(signal.SIGTERM, SonyBravia.exit_handler)
-	sonybravia.run()
-	sys.exit()
+  app = BraviaApp()
+  app.execute()

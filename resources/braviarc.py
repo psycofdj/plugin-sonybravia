@@ -21,12 +21,9 @@ TIMEOUT = 10
 
 _LOGGER = logging.getLogger(__name__)
 
-
 class BraviaRC:
-
     def __init__(self, host, mac=None):  # mac address is optional but necessary if we want to turn on the TV
         """Initialize the Sony Bravia RC class."""
-
         self._host = host
         self._mac = mac
         self._cookies = None
@@ -59,51 +56,71 @@ class BraviaRC:
             True if connected.
         """
         authorization = json.dumps(
-            {"method": "actRegister",
-             "params": [{"clientid": clientid,
-                         "nickname": nickname,
-                         "level": "private"},
-                        [{"value": "yes",
-                          "function": "WOL"}]],
-             "id": 1,
-             "version": "1.0"}
+            {
+              "method": "actRegister",
+              "params": [
+                {
+                  "clientid": clientid,
+                  "nickname": nickname,
+                  "level": "private"
+                },
+                [
+                  {
+                    "value": "yes",
+                    "function": "WOL"
+                  }
+                ]
+              ],
+              "id": 1,
+              "version": "1.0"
+            }
         ).encode('utf-8')
-
+        self.pin = pin
+        self.clientid = clientid
+        self.nickname = nickname
         headers = {}
         if pin:
             username = ''
             base64string = base64.encodebytes(('%s:%s' % (username, pin)).encode()) \
-                .decode().replace('\n', '')
+                                 .decode().replace('\n', '')
             headers['Authorization'] = "Basic %s" % base64string
             headers['Connection'] = "keep-alive"
 
         try:
             response = requests.post('http://'+self._host+'/sony/accessControl',
-                                     data=authorization, headers=headers, timeout=TIMEOUT)
+                                     data=authorization, headers=headers, timeout=10)
             response.raise_for_status()
 
         except requests.exceptions.HTTPError as exception_instance:
-            _LOGGER.error("[W] HTTPError: " + str(exception_instance))
-            return False
+            if exception_instance.response.status_code != 401:
+              _LOGGER.error("[W] HTTPError: " + str(exception_instance))
+              return True, False, False
 
         except Exception as exception_instance:  # pylint: disable=broad-except
             _LOGGER.error("[W] Exception: " + str(exception_instance))
-            return False
+            return False, False, False
 
-        else:
-            resp = response.json()
-            _LOGGER.debug(json.dumps(resp, indent=4))
-            if resp is None or not resp.get('error'):
-                self._cookies = response.cookies
-                return True
+        data = response.json()
+        _LOGGER.debug("got response from TV: %s", json.dumps(response.json()))
 
-        return False
+        if "error" in data:
+          code, message = data["error"]
+          # not-powered
+          if code == 7:
+            return True, False, False
+          # unauthorized, pin at screen
+          if code == 401:
+            return True, True, False
+          return False, False, False
 
-    def is_connected(self):
-        if self._cookies is None:
-            return False
-        else:
-            return True
+        self._cookies = response.cookies
+        return True, True, True
+
+    def _reconnect(self):
+      return self.connect(self.pin, self.clientid, self.nickname)
+
+    def is_authenticated(self):
+        return (self._cookies is not None)
 
     def _wakeonlan(self):
         if self._mac is not None:
@@ -146,7 +163,7 @@ class BraviaRC:
             content = response.content
             return content
 
-    def bravia_req_json(self, url, params, log_errors=True):
+    def bravia_req_json(self, url, params, log_errors=True, retry=True):
         """ Send request command via HTTP json to Sony Bravia."""
         try:
             response = requests.post('http://'+self._host+'/'+url,
@@ -162,6 +179,9 @@ class BraviaRC:
                 _LOGGER.error("Exception: " + str(exception_instance))
 
         else:
+            if response.status_code == 403 and retry:
+                self._reconnect()
+                return self.bravia_req_json(url, params, log_errors, retry=False)
             html = json.loads(response.content.decode('utf-8'))
             return html
 
@@ -290,7 +310,7 @@ class BraviaRC:
         cookies.set("auth", self._cookies.get("auth"))
         return cookies
 
-    def load_app_list(self, log_errors=True):
+    def load_app_list(self, log_errors=True, timeout=TIMEOUT):
         """Get the list of installed apps"""
         headers = {}
         parsed_objects = {}
@@ -299,7 +319,7 @@ class BraviaRC:
             cookies = self._recreate_auth_cookie()
             response = requests.get('http://' + self._host + '/DIAL/sony/applist',
                                      cookies=cookies,
-                                     timeout=TIMEOUT)
+                                     timeout=timeout)
         except requests.exceptions.HTTPError as exception_instance:
             if log_errors:
                 _LOGGER.error("HTTPError: " + str(exception_instance))
@@ -343,12 +363,13 @@ class BraviaRC:
             content = response.content
             return content
 
-    def turn_on(self):
+    def turn_on(self, try_ircc=True):
         """Turn the media player on."""
         self._wakeonlan()
         # Try using the power on command incase the WOL doesn't work
-        if self.get_power_status() != 'active':
-            self.send_req_ircc(self.get_command_code('TvPower'))
+        if try_ircc:
+            if self.get_power_status() != 'active':
+                self.send_req_ircc(self.get_command_code('TvPower'))
 
     def turn_off(self):
         """Turn off media player."""
@@ -362,7 +383,7 @@ class BraviaRC:
         """Volume down media player."""
         self.send_req_ircc(self.get_command_code('VolumeDown'))
 
-    def mute_volume(self, mute):
+    def mute_volume(self):
         """Send mute command."""
         self.send_req_ircc(self.get_command_code('Mute'))
 
@@ -421,10 +442,9 @@ class BraviaRC:
         except TypeError:
             #starttime = datetime.time(datetime.fromtimestamp(time.mktime(time.strptime(startDateTime[:-5], date_format))))
             starttime = datetime.time(datetime(*(time.strptime(startDateTime[:-5], date_format)[0:6])))
-        
+
         duration = time.strftime('%H:%M:%S', time.gmtime(durationSec))
         endtime = self.calc_time(str(starttime), str(duration))
         starttime = starttime.strftime('%H:%M')
-        #print(playingtime.seconds, tvplaying['durationSec'])
         perc_playingtime = int(round(((playingtime.seconds / durationSec) * 100),0))
         return str(starttime), str(endtime), str(perc_playingtime)
